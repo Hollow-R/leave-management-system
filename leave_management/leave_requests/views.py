@@ -79,7 +79,6 @@ def dashboard(request):
         'my_pending': LeaveRequest.objects.filter(employee=user, status=LeaveRequest.STATUS_PENDING).count(),
     }
 
-    # Handle leave request creation for employees
     if request.method == 'POST' and user.role == User.ROLE_EMPLOYEE:
         from datetime import datetime
         leave_type = request.POST.get('leave_type')
@@ -107,7 +106,6 @@ def dashboard(request):
         except ValueError:
             messages.error(request, 'Invalid date format.')
 
-    # Handle approve/reject actions for managers/HR
     if request.method == 'POST' and (user.role == User.ROLE_MANAGER or user.role == User.ROLE_HR):
         action = request.POST.get('action')
         leave_id = request.POST.get('leave_id')
