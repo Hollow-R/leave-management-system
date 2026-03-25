@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Leave Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .card { border: 1px solid #ddd; background: #f9f9f9; margin: 5px; padding: 10px; display: inline-block; width: 170px; }
+    </style>
+</head>
+<body>
+    <h1>Leave Request Dashboard</h1>
+    <div style="text-align: right; margin-bottom: 20px;">
+        <p>Welcome, {{ user.email }} ({{ user.get_role_display }}) |
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: blue; text-decoration: underline; cursor: pointer; padding: 0;">Logout</button>
+        </form>
+        </p>
+    </div>
+
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="padding: 10px; margin: 5px 0; border: 1px solid {% if message.tags == 'error' %}#dc3545{% else %}#28a745{% endif %}; background: {% if message.tags == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if message.tags == 'error' %}#721c24{% else %}#155724{% endif %};">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div>
+        <div class="card"><strong>Total:</strong> {{ stats.total }}</div>
+        <div class="card"><strong>Pending:</strong> {{ stats.pending }}</div>
+        <div class="card"><strong>Approved:</strong> {{ stats.approved }}</div>
+        <div class="card"><strong>Rejected:</strong> {{ stats.rejected }}</div>
+        <div class="card"><strong>My Pending:</strong> {{ stats.my_pending }}</div>
+    </div>
+
+    <h2>Pending Requests</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Requested</th>
+                {% if user.role == 'MANAGER' or user.role == 'HR' %}<th>Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for leave in pending %}
+            <tr>
+                <td>{{ leave.id }}</td>
+                <td>{{ leave.employee.email }}</td>
+                <td>{{ leave.leave_type }}</td>
+                <td>{{ leave.start_date }}</td>
+                <td>{{ leave.end_date }}</td>
+                <td>{{ leave.requested_at }}</td>
+                {% if user.role == 'MANAGER' or user.role == 'HR' %}
+                <td>
+                    <form method="post" action="{% url 'leave_dashboard' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                        <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer;">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'leave_dashboard' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                        <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer;">Reject</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="{% if user.role == 'MANAGER' or user.role == 'HR' %}7{% else %}6{% endif %}">No pending requests</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if user.role == 'EMPLOYEE' %}
+    <h2>Create New Leave Request</h2>
+    <form method="post" action="{% url 'leave_dashboard' %}" style="max-width: 400px;">
+        {% csrf_token %}
+        <select name="leave_type" required style="display: block; width: 100%; margin: 10px 0; padding: 8px;">
+            <option value="">Select Leave Type</option>
+            <option value="ANNUAL">Annual</option>
+            <option value="SICK">Sick</option>
+            <option value="UNPAID">Unpaid</option>
+        </select>
+        <input type="date" name="start_date" required style="display: block; width: 100%; margin: 10px 0; padding: 8px;">
+        <input type="date" name="end_date" required style="display: block; width: 100%; margin: 10px 0; padding: 8px;">
+        <textarea name="reason" placeholder="Reason (optional)" style="display: block; width: 100%; margin: 10px 0; padding: 8px; height: 80px;"></textarea>
+        <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px; width: 100%; cursor: pointer;">Submit Request</button>
+    </form>
+    {% endif %}
+
+    <h2>Recent Requests</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th><th>Employee</th><th>Status</th><th>From</th><th>To</th><th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for leave in recent %}
+            <tr>
+                <td>{{ leave.id }}</td>
+                <td>{{ leave.employee.email }}</td>
+                <td>{{ leave.status }}</td>
+                <td>{{ leave.start_date }}</td>
+                <td>{{ leave.end_date }}</td>
+                <td>{{ leave.leave_type }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No requests</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
